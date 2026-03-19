@@ -1,0 +1,36 @@
+# Grafana MCP Server Configuration
+# Controls which tools are exposed to the LLM
+
+server:
+  transport: sse       # sse | stdio
+  port: 8080
+  health_port: 8081
+  log_level: info      # debug | info | warn | error
+
+grafana:
+  # URL and API key are injected via environment variables:
+  # GRAFANA_URL, GRAFANA_API_KEY
+  timeout_seconds: 30
+  org_id: 1
+
+tools:
+  enabled:
+    - search_dashboards
+    - get_dashboard
+    - list_datasources
+    - query_datasource
+    - get_alerts
+    - list_panels
+    - execute_query
+    - list_folders
+    - get_annotations
+    - list_alert_rules
+    - get_alert_rule
+    - query_metrics          # Prometheus/Mimir
+    - query_logs             # Loki
+    - search_traces          # Tempo
+  disabled: []
+
+rate_limiting:
+  requests_per_minute: 120
+  burst: 20
