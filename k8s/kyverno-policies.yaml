@@ -1,0 +1,176 @@
+---
+# Kyverno ClusterPolicy: deny latest image tag
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: disallow-latest-tag
+spec:
+  validationFailureAction: Enforce
+  background: true
+  rules:
+    - name: require-image-tag
+      match:
+        any:
+          - resources:
+              kinds: [Pod]
+              namespaces: [dev, stage, prod]
+      validate:
+        message: "Image tag 'latest' is not allowed in managed namespaces."
+        pattern:
+          spec:
+            containers:
+              - image: "!*:latest"
+
+---
+# Kyverno ClusterPolicy: require non-root user
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: require-non-root
+spec:
+  validationFailureAction: Enforce
+  background: true
+  rules:
+    - name: check-runAsNonRoot
+      match:
+        any:
+          - resources:
+              kinds: [Pod]
+              namespaces: [dev, stage, prod]
+      validate:
+        message: "Containers must run as non-root."
+        pattern:
+          spec:
+            securityContext:
+              runAsNonRoot: true
+            containers:
+              - securityContext:
+                  runAsNonRoot: true
+
+---
+# Kyverno ClusterPolicy: require resource limits
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: require-resource-limits
+spec:
+  validationFailureAction: Enforce
+  background: true
+  rules:
+    - name: check-resource-limits
+      match:
+        any:
+          - resources:
+              kinds: [Pod]
+              namespaces: [dev, stage, prod]
+      validate:
+        message: "Resource limits (CPU and memory) are required."
+        pattern:
+          spec:
+            containers:
+              - resources:
+                  limits:
+                    memory: "?*"
+                    cpu: "?*"
+
+---
+# Kyverno ClusterPolicy: require liveness and readiness probes
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: require-probes
+spec:
+  validationFailureAction: Enforce
+  background: true
+  rules:
+    - name: check-probes
+      match:
+        any:
+          - resources:
+              kinds: [Pod]
+              namespaces: [stage, prod]
+      validate:
+        message: "Liveness and readiness probes are required in stage/prod."
+        pattern:
+          spec:
+            containers:
+              - livenessProbe:
+                  httpGet:
+                    path: "?*"
+                readinessProbe:
+                  httpGet:
+                    path: "?*"
+
+---
+# Kyverno ClusterPolicy: disallow privilege escalation
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: disallow-privilege-escalation
+spec:
+  validationFailureAction: Enforce
+  background: true
+  rules:
+    - name: no-privilege-escalation
+      match:
+        any:
+          - resources:
+              kinds: [Pod]
+              namespaces: [dev, stage, prod]
+      validate:
+        message: "Privilege escalation is not allowed."
+        pattern:
+          spec:
+            containers:
+              - securityContext:
+                  allowPrivilegeEscalation: false
+
+---
+# Kyverno ClusterPolicy: verify cosign image signatures
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: verify-image-signatures
+spec:
+  validationFailureAction: Enforce
+  background: false
+  rules:
+    - name: check-image-signature
+      match:
+        any:
+          - resources:
+              kinds: [Pod]
+              namespaces: [prod]  # Enforce only in prod
+      verifyImages:
+        - imageReferences:
+            - "ghcr.io/your-org/grafana-mcp/*"  # TODO: set your registry
+          attestors:
+            - entries:
+                - keyless:
+                    subject: "https://github.com/your-org/grafana-mcp-platform/*"
+                    issuer: "https://token.actions.githubusercontent.com"
+
+---
+# Kyverno ClusterPolicy: disallow hostPath volumes
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: disallow-host-path
+spec:
+  validationFailureAction: Enforce
+  background: true
+  rules:
+    - name: no-hostpath
+      match:
+        any:
+          - resources:
+              kinds: [Pod]
+              namespaces: [dev, stage, prod]
+      validate:
+        message: "HostPath volumes are not allowed."
+        deny:
+          conditions:
+            any:
+              - key: "{{ request.object.spec.volumes[].hostPath | length(@) }}"
+                operator: GreaterThan
+                value: "0"
