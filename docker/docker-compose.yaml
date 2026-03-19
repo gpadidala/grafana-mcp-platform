@@ -1,0 +1,187 @@
+version: '3.9'
+
+# ─────────────────────────────────────────────────────────────────
+# Grafana MCP Platform — Local Development Stack
+# Usage: make local-up
+# ─────────────────────────────────────────────────────────────────
+
+networks:
+  mcp-local-net:
+    driver: bridge
+
+volumes:
+  grafana-data:
+  prometheus-data:
+  loki-data:
+  ollama-data:
+  chromadb-data:
+
+services:
+
+  # ── MCP Server (Grafana MCP Go binary) ────────────────────────
+  mcp-server:
+    build:
+      context: ../mcp-server
+      dockerfile: Dockerfile
+      args:
+        VERSION: local
+        GIT_COMMIT: dev
+        BUILD_DATE: "2025-01-01"
+    image: grafana-mcp/server:local
+    container_name: mcp-server
+    restart: unless-stopped
+    environment:
+      GRAFANA_URL: http://grafana:3000
+      GRAFANA_API_KEY: ${GRAFANA_API_KEY:-admin:admin}
+      TRANSPORT: sse
+      PORT: "8080"
+      MCP_LOG_LEVEL: info
+    ports:
+      - "8080:8080"
+    depends_on:
+      grafana:
+        condition: service_healthy
+    networks:
+      - mcp-local-net
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8081/healthz"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+
+  # ── Python FastAPI Backend ────────────────────────────────────
+  backend:
+    build:
+      context: ../backend
+      dockerfile: Dockerfile
+      target: runtime
+    image: grafana-mcp/backend:local
+    container_name: mcp-backend
+    restart: unless-stopped
+    env_file:
+      - ../.env
+    environment:
+      MCP_SERVER_URL: http://mcp-server:8080/sse
+      GRAFANA_URL: http://grafana:3000
+      APP_ENV: development
+      LOG_LEVEL: INFO
+      ALLOWED_ORIGINS: "http://localhost:3001,http://localhost:5173"
+    ports:
+      - "8000:8000"
+    volumes:
+      - ../backend/app:/app/app   # Hot-reload in dev
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    depends_on:
+      mcp-server:
+        condition: service_healthy
+    networks:
+      - mcp-local-net
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/healthz')"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+
+  # ── React Frontend ────────────────────────────────────────────
+  frontend:
+    build:
+      context: ../frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_API_BASE_URL: http://localhost:8000
+        VITE_GRAFANA_URL: http://localhost:3000
+    image: grafana-mcp/frontend:local
+    container_name: mcp-frontend
+    restart: unless-stopped
+    environment:
+      VITE_API_BASE_URL: /api
+      VITE_GRAFANA_URL: http://localhost:3000
+      VITE_API_KEY: ${API_KEY_SECRET:-change-me-local-dev-only}
+    ports:
+      - "3001:3001"
+    depends_on:
+      - backend
+    networks:
+      - mcp-local-net
+
+  # ── Grafana ───────────────────────────────────────────────────
+  grafana:
+    image: grafana/grafana:11.1.0
+    container_name: grafana
+    restart: unless-stopped
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_INSTALL_PLUGINS: grafana-llm-app
+      GF_FEATURE_TOGGLES_ENABLE: "aiGeneratedDashboardChanges mlExpressions"
+    ports:
+      - "3000:3000"
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning
+    networks:
+      - mcp-local-net
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3000/api/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  # ── Prometheus ────────────────────────────────────────────────
+  prometheus:
+    image: prom/prometheus:v2.53.0
+    container_name: prometheus
+    restart: unless-stopped
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.retention.time=7d"
+      - "--web.enable-lifecycle"
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    networks:
+      - mcp-local-net
+
+  # ── Loki ──────────────────────────────────────────────────────
+  loki:
+    image: grafana/loki:3.1.0
+    container_name: loki
+    restart: unless-stopped
+    ports:
+      - "3100:3100"
+    command: -config.file=/etc/loki/local-config.yaml
+    volumes:
+      - loki-data:/loki
+    networks:
+      - mcp-local-net
+
+  # ── Promtail (log shipper) ────────────────────────────────────
+  promtail:
+    image: grafana/promtail:3.1.0
+    container_name: promtail
+    restart: unless-stopped
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./promtail/config.yaml:/etc/promtail/config.yaml:ro
+    command: -config.file=/etc/promtail/config.yaml
+    depends_on:
+      - loki
+    networks:
+      - mcp-local-net
+
+  # ── Ollama (optional local LLM) ───────────────────────────────
+  ollama:
+    image: ollama/ollama:latest
+    container_name: ollama
+    restart: unless-stopped
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama-data:/root/.ollama
+    networks:
+      - mcp-local-net
+    profiles:
+      - ollama          # Only starts with: docker compose --profile ollama up
