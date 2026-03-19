@@ -1,0 +1,58 @@
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: grafana-mcp-platform
+  namespace: argocd
+spec:
+  description: "Grafana MCP Platform — multi-environment GitOps project"
+
+  # Source repos allowed
+  sourceRepos:
+    - "https://github.com/your-org/grafana-mcp-platform"  # TODO: set your GitHub org
+    - "https://grafana.github.io/helm-charts"
+    - "https://prometheus-community.github.io/helm-charts"
+
+  # Allowed destination clusters and namespaces
+  destinations:
+    - server: "https://kubernetes.default.svc"
+      namespace: dev
+    - server: "https://kubernetes.default.svc"
+      namespace: stage
+    - server: "https://kubernetes.default.svc"
+      namespace: prod
+    - server: "*"
+      namespace: argocd
+
+  # RBAC — dev team can sync dev only
+  roles:
+    - name: dev-deployer
+      description: "Can sync dev environment"
+      policies:
+        - p, proj:grafana-mcp-platform:dev-deployer, applications, sync, grafana-mcp-platform/mcp-dev, allow
+        - p, proj:grafana-mcp-platform:dev-deployer, applications, get, grafana-mcp-platform/mcp-dev, allow
+      groups:
+        - dev-team
+
+    - name: perf-deployer
+      description: "Can sync perf environment"
+      policies:
+        - p, proj:grafana-mcp-platform:perf-deployer, applications, sync, grafana-mcp-platform/mcp-perf, allow
+        - p, proj:grafana-mcp-platform:perf-deployer, applications, get, grafana-mcp-platform/mcp-perf, allow
+      groups:
+        - release-team
+
+    - name: prod-deployer
+      description: "Can sync prod environment (requires approval)"
+      policies:
+        - p, proj:grafana-mcp-platform:prod-deployer, applications, sync, grafana-mcp-platform/mcp-prod, allow
+        - p, proj:grafana-mcp-platform:prod-deployer, applications, get, grafana-mcp-platform/mcp-prod, allow
+      groups:
+        - platform-team
+
+  # Restrict cluster-level resources
+  clusterResourceWhitelist:
+    - group: ""
+      kind: Namespace
+  namespaceResourceWhitelist:
+    - group: "*"
+      kind: "*"

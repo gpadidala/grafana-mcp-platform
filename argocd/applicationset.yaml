@@ -1,0 +1,74 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: grafana-mcp-platform
+  namespace: argocd
+spec:
+  generators:
+    - list:
+        elements:
+          - env: dev
+            namespace: dev
+            cluster: https://kubernetes.default.svc
+            valuesFile: values-dev.yaml
+            syncPolicy: automated    # Auto-sync for dev
+            selfHeal: "true"
+            prune: "true"
+
+          - env: perf
+            namespace: stage
+            cluster: https://kubernetes.default.svc
+            valuesFile: values-perf.yaml
+            syncPolicy: automated
+            selfHeal: "false"
+            prune: "true"
+
+          - env: prod
+            namespace: prod
+            cluster: https://kubernetes.default.svc
+            valuesFile: values-prod.yaml
+            syncPolicy: manual       # Manual for prod
+            selfHeal: "false"
+            prune: "false"
+
+  template:
+    metadata:
+      name: "mcp-{{env}}"
+      namespace: argocd
+      annotations:
+        notifications.argoproj.io/subscribe.on-deployed.slack: "#platform-deployments"  # TODO: configure Slack
+    spec:
+      project: grafana-mcp-platform
+      source:
+        repoURL: "https://github.com/your-org/grafana-mcp-platform"  # TODO
+        targetRevision: HEAD
+        path: helm/grafana-mcp-platform
+        helm:
+          valueFiles:
+            - values.yaml
+            - "{{valuesFile}}"
+          releaseName: "grafana-mcp"
+      destination:
+        server: "{{cluster}}"
+        namespace: "{{namespace}}"
+      syncPolicy:
+        {{- "{{#if (eq syncPolicy \"automated\")}}" }}
+        automated:
+          selfHeal: {{selfHeal}}
+          prune: {{prune}}
+        {{- "{{/if}}" }}
+        syncOptions:
+          - CreateNamespace=true
+          - PrunePropagationPolicy=foreground
+          - RespectIgnoreDifferences=true
+        retry:
+          limit: 3
+          backoff:
+            duration: 5s
+            factor: 2
+            maxDuration: 3m
+      ignoreDifferences:
+        - group: apps
+          kind: Deployment
+          jsonPointers:
+            - /spec/replicas    # Ignore HPA-managed replica count

@@ -1,0 +1,26 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: mcp-prod
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-options: "Prune=false"  # Never auto-prune prod
+spec:
+  project: grafana-mcp-platform
+  source:
+    repoURL: "https://github.com/your-org/grafana-mcp-platform"  # TODO
+    targetRevision: main
+    path: helm/grafana-mcp-platform
+    helm:
+      valueFiles:
+        - values.yaml
+        - values-prod.yaml
+      releaseName: grafana-mcp
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: prod
+  syncPolicy:
+    # Manual sync only for production
+    syncOptions:
+      - CreateNamespace=true
+      - PrunePropagationPolicy=foreground
