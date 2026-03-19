@@ -1,0 +1,37 @@
+# ── PERF environment overrides ────────────────────────────────────
+global:
+  cloudProvider: "gcp"   # PERF runs on GKE
+
+frontend:
+  replicas: 2
+  autoscaling:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 6
+  ingress:
+    host: "mcp-perf.your-domain.com"
+
+backend:
+  replicas: 2
+  resources:
+    requests:
+      cpu: 250m
+      memory: 512Mi
+    limits:
+      cpu: 1000m
+      memory: 1Gi
+  config:
+    appEnv: perf
+    logLevel: INFO
+  autoscaling:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 8
+
+mcpServer:
+  replicas: 2
+
+externalSecrets:
+  secretStore:
+    gcp:
+      projectId: "your-gcp-perf-project"  # TODO

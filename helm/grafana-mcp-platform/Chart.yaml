@@ -1,0 +1,24 @@
+apiVersion: v2
+name: grafana-mcp-platform
+description: "Production-grade Grafana MCP Platform — LLM Gateway + MCP Server + React UI"
+type: application
+version: 1.0.0
+appVersion: "1.0.0"
+home: https://github.com/your-org/grafana-mcp-platform
+maintainers:
+  - name: Platform Engineering Team
+    email: platform@your-org.com
+
+dependencies:
+  - name: grafana
+    version: "8.x.x"
+    repository: https://grafana.github.io/helm-charts
+    condition: grafana.enabled
+  - name: prometheus
+    version: "25.x.x"
+    repository: https://prometheus-community.github.io/helm-charts
+    condition: prometheus.enabled
+  - name: loki
+    version: "6.x.x"
+    repository: https://grafana.github.io/helm-charts
+    condition: loki.enabled

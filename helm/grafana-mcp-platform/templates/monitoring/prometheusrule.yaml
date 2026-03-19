@@ -1,0 +1,62 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: {{ include "grafana-mcp-platform.fullname" . }}-alerts
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "grafana-mcp-platform.labels" . | nindent 4 }}
+spec:
+  groups:
+    - name: grafana-mcp-platform.rules
+      rules:
+        - alert: BackendHighErrorRate
+          expr: |
+            rate(http_request_duration_seconds_count{job="grafana-mcp-backend",status=~"5.."}[5m])
+            / rate(http_request_duration_seconds_count{job="grafana-mcp-backend"}[5m]) > 0.05
+          for: 5m
+          labels:
+            severity: critical
+          annotations:
+            summary: "High error rate on MCP backend"
+            description: "Error rate is {{ $value | humanizePercentage }} (threshold 5%)"
+
+        - alert: BackendHighLatency
+          expr: |
+            histogram_quantile(0.99,
+              rate(http_request_duration_seconds_bucket{job="grafana-mcp-backend"}[5m])
+            ) > 5
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "High P99 latency on MCP backend"
+            description: "P99 latency is {{ $value }}s (threshold 5s)"
+
+        - alert: MCPToolCallErrors
+          expr: |
+            rate(mcp_tool_call_total{status="error"}[5m]) > 3
+          for: 2m
+          labels:
+            severity: warning
+          annotations:
+            summary: "High MCP tool call error rate"
+
+        - alert: PodCrashLooping
+          expr: |
+            kube_pod_container_status_restarts_total{namespace="{{ .Release.Namespace }}"}
+            - kube_pod_container_status_restarts_total{namespace="{{ .Release.Namespace }}"} offset 10m > 3
+          for: 0m
+          labels:
+            severity: critical
+          annotations:
+            summary: "Pod is crash looping"
+
+        - alert: HPAAtMaxReplicas
+          expr: |
+            kube_horizontalpodautoscaler_status_current_replicas{namespace="{{ .Release.Namespace }}"}
+            >= kube_horizontalpodautoscaler_spec_max_replicas{namespace="{{ .Release.Namespace }}"}
+          for: 15m
+          labels:
+            severity: warning
+          annotations:
+            summary: "HPA has reached max replicas"

@@ -1,0 +1,153 @@
+# ─────────────────────────────────────────────────────────────────
+# Grafana MCP Platform — Base Helm Values
+# Override per-environment in values-dev.yaml, values-perf.yaml, values-prod.yaml
+# ─────────────────────────────────────────────────────────────────
+
+global:
+  # TODO: Set your container registry, e.g., "ghcr.io/your-org"
+  imageRegistry: "ghcr.io/your-org"
+  imagePullSecrets: []
+  # Cloud provider for ExternalSecret: aws | azure | gcp
+  cloudProvider: "aws"
+
+# ── Frontend (React nginx) ────────────────────────────────────────
+frontend:
+  enabled: true
+  image:
+    repository: grafana-mcp/frontend
+    tag: "1.0.0"
+    pullPolicy: IfNotPresent
+  replicas: 1
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+    limits:
+      cpu: 200m
+      memory: 128Mi
+  service:
+    type: ClusterIP
+    port: 3001
+  ingress:
+    enabled: true
+    className: nginx
+    host: "mcp.your-domain.com"  # TODO: set your domain
+    tlsSecret: "grafana-mcp-tls"
+    annotations:
+      cert-manager.io/cluster-issuer: letsencrypt-prod
+      nginx.ingress.kubernetes.io/ssl-redirect: "true"
+  autoscaling:
+    enabled: false
+    minReplicas: 1
+    maxReplicas: 5
+    cpuUtilization: 70
+  env:
+    VITE_GRAFANA_URL: "http://grafana:3000"
+
+# ── Backend (FastAPI) ─────────────────────────────────────────────
+backend:
+  enabled: true
+  image:
+    repository: grafana-mcp/backend
+    tag: "1.0.0"
+    pullPolicy: IfNotPresent
+  replicas: 1
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+  service:
+    type: ClusterIP
+    port: 8000
+  autoscaling:
+    enabled: true
+    minReplicas: 1
+    maxReplicas: 5
+    cpuUtilization: 60
+    memoryUtilization: 70
+  pdb:
+    enabled: false
+    minAvailable: 1
+  config:
+    logLevel: INFO
+    appEnv: development
+    enableStreaming: "true"
+    maxToolIterations: "10"
+    defaultLLMProvider: openai
+    defaultModel: gpt-4o
+  # References to K8s Secrets pulled by ExternalSecrets
+  secrets:
+    openaiApiKeySecretName: "grafana-mcp-llm-secrets"
+    openaiApiKeySecretKey: "OPENAI_API_KEY"
+    anthropicApiKeySecretName: "grafana-mcp-llm-secrets"
+    anthropicApiKeySecretKey: "ANTHROPIC_API_KEY"
+    grafanaApiKeySecretName: "grafana-mcp-grafana-secrets"
+    grafanaApiKeySecretKey: "GRAFANA_API_KEY"
+    apiKeySecretName: "grafana-mcp-auth-secrets"
+    apiKeySecretKey: "API_KEY_SECRET"
+
+# ── MCP Server (Grafana MCP Go binary) ───────────────────────────
+mcpServer:
+  enabled: true
+  image:
+    repository: grafana-mcp/server
+    tag: "1.0.0"
+    pullPolicy: IfNotPresent
+  replicas: 1
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+    limits:
+      cpu: 200m
+      memory: 128Mi
+  service:
+    type: ClusterIP
+    port: 8080
+    healthPort: 8081
+  config:
+    transport: sse
+    logLevel: info
+  grafana:
+    url: ""          # defaults to internal grafana service URL
+    orgId: "1"
+    timeout: "30"
+  secrets:
+    grafanaApiKeySecretName: "grafana-mcp-grafana-secrets"
+    grafanaApiKeySecretKey: "GRAFANA_API_KEY"
+
+# ── External Secrets Operator ─────────────────────────────────────
+externalSecrets:
+  enabled: true
+  secretStore:
+    # For AWS: uses IRSA — no static credentials
+    aws:
+      region: us-east-1
+      secretPrefix: "grafana-mcp"
+    # For Azure: uses Managed Identity
+    azure:
+      vaultUrl: ""    # TODO: https://your-vault.vault.azure.net
+      tenantId: ""    # TODO: your AAD tenant ID
+    # For GCP: uses Workload Identity
+    gcp:
+      projectId: ""   # TODO: your GCP project ID
+
+# ── Kyverno Policies ──────────────────────────────────────────────
+kyverno:
+  policies:
+    enabled: true
+
+# ── Grafana subchart (bundled for self-contained deploys) ─────────
+grafana:
+  enabled: false      # Set true to deploy bundled Grafana
+
+# ── Prometheus subchart ───────────────────────────────────────────
+prometheus:
+  enabled: false      # Set true to deploy bundled Prometheus
+
+# ── Loki subchart ─────────────────────────────────────────────────
+loki:
+  enabled: false

@@ -1,0 +1,24 @@
+{{- if .Values.mcpServer.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "grafana-mcp-platform.fullname" . }}-mcp-server
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "grafana-mcp-platform.labels" . | nindent 4 }}
+    app.kubernetes.io/component: mcp-server
+spec:
+  type: ClusterIP
+  ports:
+    - port: {{ .Values.mcpServer.service.port }}
+      targetPort: sse
+      protocol: TCP
+      name: sse
+    - port: {{ .Values.mcpServer.service.healthPort }}
+      targetPort: health
+      protocol: TCP
+      name: health
+  selector:
+    {{- include "grafana-mcp-platform.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: mcp-server
+{{- end }}

@@ -1,0 +1,43 @@
+# ── DEV environment overrides ─────────────────────────────────────
+global:
+  cloudProvider: "azure"   # DEV runs on AKS
+
+frontend:
+  replicas: 1
+  ingress:
+    host: "mcp-dev.your-domain.com"
+    annotations:
+      cert-manager.io/cluster-issuer: letsencrypt-staging
+
+backend:
+  replicas: 1
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+  config:
+    appEnv: development
+    logLevel: DEBUG
+  autoscaling:
+    enabled: false
+
+mcpServer:
+  replicas: 1
+
+externalSecrets:
+  secretStore:
+    azure:
+      vaultUrl: "https://grafana-mcp-dev.vault.azure.net"  # TODO
+
+# Enable bundled Grafana for dev
+grafana:
+  enabled: true
+  adminPassword: "changeme-dev"
+  persistence:
+    enabled: false
+
+prometheus:
+  enabled: true

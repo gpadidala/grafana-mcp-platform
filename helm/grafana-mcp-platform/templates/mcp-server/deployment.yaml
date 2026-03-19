@@ -1,0 +1,72 @@
+{{- if .Values.mcpServer.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "grafana-mcp-platform.fullname" . }}-mcp-server
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "grafana-mcp-platform.labels" . | nindent 4 }}
+    app.kubernetes.io/component: mcp-server
+spec:
+  replicas: {{ .Values.mcpServer.replicas }}
+  selector:
+    matchLabels:
+      {{- include "grafana-mcp-platform.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: mcp-server
+  template:
+    metadata:
+      labels:
+        {{- include "grafana-mcp-platform.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: mcp-server
+    spec:
+      serviceAccountName: {{ include "grafana-mcp-platform.fullname" . }}-mcp-server
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65534
+        runAsGroup: 65534
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: mcp-server
+          image: "{{ .Values.global.imageRegistry }}/{{ .Values.mcpServer.image.repository }}:{{ .Values.mcpServer.image.tag }}"
+          imagePullPolicy: {{ .Values.mcpServer.image.pullPolicy }}
+          securityContext:
+            readOnlyRootFilesystem: true
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+          args:
+            - "--transport"
+            - {{ .Values.mcpServer.config.transport | quote }}
+            - "--port"
+            - {{ .Values.mcpServer.service.port | quote }}
+          ports:
+            - name: sse
+              containerPort: {{ .Values.mcpServer.service.port }}
+            - name: health
+              containerPort: {{ .Values.mcpServer.service.healthPort }}
+          env:
+            - name: GRAFANA_URL
+              value: {{ default (printf "http://%s-grafana:3000" (include "grafana-mcp-platform.fullname" .)) .Values.mcpServer.grafana.url | quote }}
+            - name: GRAFANA_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.mcpServer.secrets.grafanaApiKeySecretName }}
+                  key: {{ .Values.mcpServer.secrets.grafanaApiKeySecretKey }}
+            - name: MCP_LOG_LEVEL
+              value: {{ .Values.mcpServer.config.logLevel | quote }}
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: health
+            initialDelaySeconds: 15
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: health
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          resources:
+            {{- toYaml .Values.mcpServer.resources | nindent 12 }}
+{{- end }}
