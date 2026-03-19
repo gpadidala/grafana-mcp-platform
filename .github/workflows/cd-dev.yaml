@@ -1,0 +1,111 @@
+name: CD — Deploy to DEV
+
+on:
+  push:
+    branches: [main]
+
+env:
+  REGISTRY: ghcr.io/${{ github.repository_owner }}
+  IMAGE_TAG: dev-${{ github.sha }}
+
+jobs:
+  build-and-push:
+    name: Build + Push images
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+      id-token: write  # For cosign keyless signing
+    outputs:
+      image_tag: ${{ env.IMAGE_TAG }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Install cosign
+        uses: sigstore/cosign-installer@v3
+
+      - name: Build and push backend
+        uses: docker/build-push-action@v6
+        with:
+          context: backend/
+          push: true
+          platforms: linux/amd64,linux/arm64
+          tags: |
+            ${{ env.REGISTRY }}/grafana-mcp/backend:${{ env.IMAGE_TAG }}
+            ${{ env.REGISTRY }}/grafana-mcp/backend:dev-latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build and push frontend
+        uses: docker/build-push-action@v6
+        with:
+          context: frontend/
+          push: true
+          platforms: linux/amd64,linux/arm64
+          tags: |
+            ${{ env.REGISTRY }}/grafana-mcp/frontend:${{ env.IMAGE_TAG }}
+            ${{ env.REGISTRY }}/grafana-mcp/frontend:dev-latest
+
+      - name: Build and push mcp-server
+        uses: docker/build-push-action@v6
+        with:
+          context: mcp-server/
+          push: true
+          platforms: linux/amd64,linux/arm64
+          build-args: |
+            VERSION=${{ env.IMAGE_TAG }}
+            GIT_COMMIT=${{ github.sha }}
+            BUILD_DATE=${{ github.event.head_commit.timestamp }}
+          tags: |
+            ${{ env.REGISTRY }}/grafana-mcp/server:${{ env.IMAGE_TAG }}
+            ${{ env.REGISTRY }}/grafana-mcp/server:dev-latest
+
+      - name: Trivy scan backend
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ env.REGISTRY }}/grafana-mcp/backend:${{ env.IMAGE_TAG }}
+          format: sarif
+          output: trivy-backend.sarif
+          exit-code: "1"
+          severity: CRITICAL
+
+      - name: Cosign sign images (keyless via OIDC)
+        run: |
+          cosign sign --yes ${{ env.REGISTRY }}/grafana-mcp/backend:${{ env.IMAGE_TAG }}
+          cosign sign --yes ${{ env.REGISTRY }}/grafana-mcp/frontend:${{ env.IMAGE_TAG }}
+          cosign sign --yes ${{ env.REGISTRY }}/grafana-mcp/server:${{ env.IMAGE_TAG }}
+
+  update-dev-values:
+    name: Update DEV values.yaml → trigger ArgoCD
+    runs-on: ubuntu-latest
+    needs: build-and-push
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          ref: main
+
+      - name: Update image tags in values-dev.yaml
+        run: |
+          sed -i "s|tag: \".*\"|tag: \"${{ env.IMAGE_TAG }}\"|g" \
+            helm/grafana-mcp-platform/values-dev.yaml
+
+      - name: Commit updated values
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add helm/grafana-mcp-platform/values-dev.yaml
+          git diff --staged --quiet || git commit -m \
+            "chore(cd): update dev image tags to ${{ env.IMAGE_TAG }} [skip ci]"
+          git push
