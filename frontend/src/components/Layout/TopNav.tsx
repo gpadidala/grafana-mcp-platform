@@ -179,7 +179,7 @@ export function TopNav() {
           className="w-7 h-7 rounded-full flex items-center justify-center text-11 font-bold text-white flex-shrink-0 select-none"
           style={{ background: 'linear-gradient(135deg, #3B82F6, #0EA5E9)', boxShadow: '0 0 10px rgba(59,130,246,0.35)' }}
         >
-          U
+          G
         </div>
       </div>
     </header>
