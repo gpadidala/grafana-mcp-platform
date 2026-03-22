@@ -14,7 +14,7 @@ from slowapi.middleware import SlowAPIMiddleware
 from slowapi.util import get_remote_address
 
 from app.config import settings
-from app.routers import auth, chat, grafana, health, mcp
+from app.routers import auth, chat, grafana, health, investigations, mcp, queries, skills
 
 # ── Structured logging ────────────────────────────────────────────────────────
 structlog.configure(
@@ -47,7 +47,7 @@ app.add_middleware(SlowAPIMiddleware)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.allowed_origins,
+    allow_origins=settings.allowed_origins_list,
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["*"],
@@ -85,6 +85,9 @@ app.include_router(auth.router)
 app.include_router(chat.router)
 app.include_router(mcp.router)
 app.include_router(grafana.router)
+app.include_router(skills.router)
+app.include_router(investigations.router)
+app.include_router(queries.router)
 
 
 @app.on_event("startup")
@@ -97,6 +100,9 @@ async def startup_event() -> None:
         mcp_url=settings.mcp_server_url,
         grafana_url=settings.grafana_url,
     )
+    # Start MCP background connection (non-blocking — falls back to mock tools)
+    from app.services.mcp_client import mcp_client
+    await mcp_client.connect()
 
 
 @app.on_event("shutdown")

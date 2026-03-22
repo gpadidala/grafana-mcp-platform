@@ -1,53 +1,50 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+@import '@fontsource/jetbrains-mono/400.css';
+@import '@fontsource/jetbrains-mono/500.css';
+
+@import './design-system/theme.css';
+@import './design-system/animations.css';
+@import './design-system/components.css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
-  :root {
-    color-scheme: dark;
-  }
+  :root { color-scheme: dark; }
 
-  * {
-    box-sizing: border-box;
-  }
+  *, *::before, *::after { box-sizing: border-box; }
 
   html, body, #root {
     height: 100%;
     margin: 0;
     padding: 0;
+    overflow: hidden;
   }
 
   body {
-    @apply bg-gray-950 text-gray-100 font-sans;
+    background-color: #050A14;
+    color: #F1F5F9;
+    font-family: 'Inter', system-ui, sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    font-size: 14px;
+    line-height: 1.5;
   }
 
-  /* Scrollbar styling */
-  ::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
-  }
-  ::-webkit-scrollbar-track {
-    @apply bg-transparent;
-  }
-  ::-webkit-scrollbar-thumb {
-    @apply bg-gray-700 rounded-full;
-  }
-  ::-webkit-scrollbar-thumb:hover {
-    @apply bg-gray-600;
-  }
-}
+  ::-webkit-scrollbar       { width: 5px; height: 5px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: rgba(59,130,246,0.2); border-radius: 9999px; }
+  ::-webkit-scrollbar-thumb:hover { background: rgba(59,130,246,0.35); }
 
-/* highlight.js theme override for dark mode */
-.hljs {
-  @apply bg-gray-950 text-gray-200 text-xs;
-}
+  *:focus-visible {
+    outline: 2px solid rgba(59,130,246,0.5);
+    outline-offset: 2px;
+  }
 
-/* Prose overrides for dark markdown */
-.prose-invert {
-  --tw-prose-body: theme('colors.gray.300');
-  --tw-prose-headings: theme('colors.white');
-  --tw-prose-code: theme('colors.orange.300');
-  --tw-prose-links: theme('colors.blue.400');
+  a { color: #3B82F6; text-decoration: none; }
+  a:hover { color: #60A5FA; }
+
+  ::placeholder { color: #334155; font-style: italic; opacity: 1; }
 }

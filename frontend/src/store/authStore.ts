@@ -32,7 +32,7 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
 
   getAuthHeaders: () => {
     const { token, authType } = get()
-    if (!token) return {}
+    if (!token) return {} as Record<string, string>
     if (authType === 'api_key') return { 'X-API-Key': token }
     return { Authorization: `Bearer ${token}` }
   },

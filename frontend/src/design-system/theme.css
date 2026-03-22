@@ -1,0 +1,72 @@
+/* NovaSRE — Design System Tokens */
+:root {
+  --bg-base:       #050A14;
+  --bg-surface:    #0D1321;
+  --bg-elevated:   #111827;
+  --border:        rgba(59,130,246,0.12);
+  --border-glow:   rgba(59,130,246,0.4);
+  --text-primary:  #F1F5F9;
+  --text-muted:    #64748B;
+  --text-subtle:   #334155;
+  --accent-blue:   #3B82F6;
+  --accent-cyan:   #06B6D4;
+  --accent-glow:   rgba(59,130,246,0.08);
+  --success:       #10B981;
+  --warning:       #F59E0B;
+  --error:         #EF4444;
+
+  /* Legacy vars — keep for existing components */
+  --color-bg-canvas:        #050A14;
+  --color-bg-primary:       #0D1321;
+  --color-bg-secondary:     #0D1321;
+  --color-bg-elevated:      #111827;
+  --color-bg-overlay:       #111827;
+  --color-border-weak:      rgba(59,130,246,0.12);
+  --color-border-medium:    rgba(59,130,246,0.22);
+  --color-border-strong:    rgba(59,130,246,0.45);
+  --color-primary:          #3B82F6;
+  --color-primary-hover:    #60A5FA;
+  --color-primary-muted:    rgba(59,130,246,0.12);
+  --color-primary-glow:     rgba(59,130,246,0.3);
+  --color-ai:               #3B82F6;
+  --color-ai-hover:         #60A5FA;
+  --color-ai-muted:         rgba(59,130,246,0.10);
+  --color-ai-glow:          rgba(59,130,246,0.3);
+  --color-ai-pulse:         rgba(59,130,246,0.5);
+  --color-success:          #10B981;
+  --color-warning:          #F59E0B;
+  --color-error:            #EF4444;
+  --color-text-primary:     #F1F5F9;
+  --color-text-secondary:   #64748B;
+  --color-text-disabled:    #334155;
+  --color-text-link:        #3B82F6;
+  --color-text-ai:          #93C5FD;
+
+  /* Typography */
+  --font-sans: 'Inter', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+
+  /* Shadows */
+  --shadow-card:        0 0 0 1px rgba(59,130,246,0.12), 0 4px 24px rgba(0,0,0,0.4);
+  --shadow-elevated:    0 8px 32px rgba(0,0,0,0.5);
+  --shadow-ai-glow:     0 0 0 3px rgba(59,130,246,0.12);
+  --shadow-blue-glow:   0 0 24px rgba(59,130,246,0.3);
+  --shadow-soft:        0 2px 8px rgba(0,0,0,0.3);
+  --shadow-input-focus: 0 0 0 3px rgba(59,130,246,0.15);
+
+  /* Spacing */
+  --space-1: 4px;  --space-2: 8px;   --space-3: 12px;
+  --space-4: 16px; --space-5: 20px;  --space-6: 24px;
+  --space-8: 32px; --space-12: 48px;
+
+  /* Radius */
+  --radius-sm: 4px; --radius-md: 8px; --radius-lg: 12px;
+  --radius-xl: 16px; --radius-full: 9999px;
+
+  /* Ease */
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-out:    cubic-bezier(0.16, 1, 0.3, 1);
+  --duration-fast:   120ms;
+  --duration-normal: 200ms;
+  --duration-slow:   350ms;
+}

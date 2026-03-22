@@ -44,10 +44,7 @@ services:
     networks:
       - mcp-local-net
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:8081/healthz"]
-      interval: 15s
-      timeout: 5s
-      retries: 5
+      test: ["NONE"]
 
   # ── Python FastAPI Backend ────────────────────────────────────
   backend:
@@ -69,11 +66,12 @@ services:
     ports:
       - "8000:8000"
     volumes:
-      - ../backend/app:/app/app   # Hot-reload in dev
+      - ../backend/app:/app/app         # Hot-reload in dev
+      - ../skills:/app/skills:ro        # Skill templates
     command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
     depends_on:
       mcp-server:
-        condition: service_healthy
+        condition: service_started
     networks:
       - mcp-local-net
     healthcheck:

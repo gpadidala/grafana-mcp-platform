@@ -5,7 +5,6 @@ import {
   LLMProviderType,
   PROVIDER_MODELS,
   PROVIDER_DISPLAY_NAMES,
-  PROVIDER_COLORS,
 } from '@/types/llm'
 import { clsx } from 'clsx'
 

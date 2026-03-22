@@ -57,3 +57,36 @@ export const authApi = {
   getMe: () => apiClient.get('/v1/auth/me'),
   getProviders: () => apiClient.get('/v1/auth/providers'),
 }
+
+// ── Skills API ────────────────────────────────────────────────────────────────
+
+export const skillsApi = {
+  list: (category?: string, query?: string) =>
+    apiClient.get('/v1/skills', { params: { category, query } }),
+  get: (id: string) => apiClient.get(`/v1/skills/${id}`),
+  run: (id: string, variables: Record<string, string>) =>
+    apiClient.post(`/v1/skills/${id}/run`, { variables }),
+  create: (data: unknown) => apiClient.post('/v1/skills', data),
+  update: (id: string, data: unknown) => apiClient.put(`/v1/skills/${id}`, data),
+  delete: (id: string) => apiClient.delete(`/v1/skills/${id}`),
+}
+
+// ── Investigations API ────────────────────────────────────────────────────────
+
+export const investigationsApi = {
+  start: (data: { problem: string; time_range: string; services?: string[] }) =>
+    apiClient.post('/v1/investigations', data),
+  get: (id: string) => apiClient.get(`/v1/investigations/${id}`),
+  list: (limit = 20) => apiClient.get('/v1/investigations', { params: { limit } }),
+}
+
+// ── Queries API ───────────────────────────────────────────────────────────────
+
+export const queriesApi = {
+  validate: (query: string, language?: string) =>
+    apiClient.post('/v1/queries/validate', { query, language }),
+  explain: (query: string, language?: string) =>
+    apiClient.post('/v1/queries/explain', { query, language }),
+  detectLanguage: (query: string) =>
+    apiClient.post('/v1/queries/detect-language', { query }),
+}

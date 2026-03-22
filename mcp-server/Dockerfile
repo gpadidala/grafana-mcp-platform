@@ -1,5 +1,5 @@
 # Stage 1: Builder — clone and build the official Grafana MCP server binary
-FROM golang:1.22-alpine AS builder
+FROM golang:1.24-alpine AS builder
 
 ARG VERSION=latest
 ARG GIT_COMMIT=unknown
@@ -17,7 +17,7 @@ RUN git clone --depth 1 https://github.com/grafana/mcp-grafana.git .
 RUN go mod download
 
 # Build the binary with version info
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build \
+RUN CGO_ENABLED=0 GOOS=linux go build \
     -ldflags="-w -s \
       -X main.version=${VERSION} \
       -X main.gitCommit=${GIT_COMMIT} \
@@ -57,4 +57,4 @@ ENV MCP_LOG_LEVEL=info \
     PORT=8080
 
 ENTRYPOINT ["/mcp-grafana"]
-CMD ["--transport", "sse", "--port", "8080"]
+CMD ["-transport", "sse", "-address", "0.0.0.0:8080"]

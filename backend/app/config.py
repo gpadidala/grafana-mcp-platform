@@ -40,8 +40,8 @@ class Settings(BaseSettings):
     debug: bool = False
 
     # ── CORS ───────────────────────────────────────────────────────────────────
-    allowed_origins: list[str] = Field(
-        default=["http://localhost:3001", "http://localhost:5173"]
+    allowed_origins: str = Field(
+        default="http://localhost:3001,http://localhost:5173"
     )
 
     # ── Grafana ────────────────────────────────────────────────────────────────
@@ -111,12 +111,18 @@ class Settings(BaseSettings):
     gcp_project_id: str = ""
     gcp_secret_prefix: str = "grafana-mcp"
 
-    @field_validator("allowed_origins", mode="before")
-    @classmethod
-    def parse_origins(cls, v: str | list[str]) -> list[str]:
-        if isinstance(v, str):
-            return [o.strip() for o in v.split(",")]
-        return v
+    @property
+    def allowed_origins_list(self) -> list[str]:
+        """Parse allowed_origins string (comma-separated or JSON array) into a list."""
+        import json
+        v = self.allowed_origins.strip()
+        try:
+            parsed = json.loads(v)
+            if isinstance(parsed, list):
+                return [str(o) for o in parsed]
+        except (json.JSONDecodeError, ValueError):
+            pass
+        return [o.strip() for o in v.split(",") if o.strip()]
 
     @property
     def is_production(self) -> bool:

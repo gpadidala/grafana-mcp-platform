@@ -1,6 +1,5 @@
 import { create } from 'zustand'
 import { devtools } from 'zustand/middleware'
-import { v4 as uuidv4 } from 'crypto'
 import type { ChatSession, Message, ToolCallInfo } from '@/types/chat'
 
 function newSessionId(): string {

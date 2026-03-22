@@ -1,0 +1,84 @@
+/* NovaSRE — Shared Component Classes */
+
+/* ── Scrollbar ─────────────────────────────── */
+.scrollbar-thin::-webkit-scrollbar       { width: 4px; height: 4px; }
+.scrollbar-thin::-webkit-scrollbar-track { background: transparent; }
+.scrollbar-thin::-webkit-scrollbar-thumb { background: rgba(59,130,246,0.18); border-radius: 9999px; }
+.scrollbar-thin::-webkit-scrollbar-thumb:hover { background: rgba(59,130,246,0.35); }
+
+/* ── Skeleton ──────────────────────────────── */
+.skeleton {
+  background: linear-gradient(90deg, #111827 0%, #1E293B 50%, #111827 100%);
+  background-size: 200% 100%;
+  animation: shimmer 2s linear infinite;
+  border-radius: 6px;
+}
+
+/* ── Gradient Text ─────────────────────────── */
+.gradient-text-ai {
+  background: linear-gradient(135deg, #3B82F6 0%, #06B6D4 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ── AI Cursor ─────────────────────────────── */
+.ai-cursor::after {
+  content: '|';
+  color: #3B82F6;
+  animation: cursor-blink 1s step-end infinite;
+  margin-left: 1px;
+}
+
+/* ── Glass ─────────────────────────────────── */
+.glass {
+  background: rgba(13,19,33,0.8);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(59,130,246,0.12);
+}
+
+/* ── Nav Active ────────────────────────────── */
+.nav-active-item {
+  background: rgba(59,130,246,0.08);
+  border-left: 2px solid #3B82F6;
+  color: #F1F5F9;
+}
+
+.nav-active-item-navy {
+  background: rgba(59,130,246,0.08);
+  border-left: 2px solid #3B82F6;
+  color: #F1F5F9;
+}
+
+/* ── Tool Shimmer ──────────────────────────── */
+.tool-call-shimmer {
+  background: linear-gradient(90deg, rgba(59,130,246,0.05) 0%, rgba(59,130,246,0.12) 50%, rgba(59,130,246,0.05) 100%);
+  background-size: 200% 100%;
+  animation: shimmer 2s linear infinite;
+}
+
+/* ── Prose ─────────────────────────────────── */
+.prose-grafana { color: #F1F5F9; max-width: none; }
+.prose-grafana h1,.prose-grafana h2,.prose-grafana h3,.prose-grafana h4 {
+  color: #F1F5F9; font-weight: 700; margin-top: 1.25em; margin-bottom: 0.5em;
+}
+.prose-grafana p { margin-bottom: 0.75em; line-height: 1.7; }
+.prose-grafana code {
+  background: rgba(59,130,246,0.1); border: 1px solid rgba(59,130,246,0.2);
+  border-radius: 4px; padding: 1px 5px; font-size: 0.82em; color: #60A5FA;
+  font-family: var(--font-mono);
+}
+.prose-grafana pre {
+  background: #050A14 !important; border: 1px solid rgba(59,130,246,0.12);
+  border-radius: 10px; padding: 16px; overflow-x: auto; margin: 12px 0;
+}
+.prose-grafana pre code { background: transparent; border: none; padding: 0; color: #F1F5F9; }
+.prose-grafana a { color: #3B82F6; text-decoration: underline; }
+.prose-grafana ul,.prose-grafana ol { padding-left: 1.5em; margin-bottom: 0.75em; }
+.prose-grafana li { margin-bottom: 0.25em; }
+.prose-grafana table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.prose-grafana th { background: #111827; border: 1px solid rgba(59,130,246,0.12); padding: 8px 12px; font-weight: 600; }
+.prose-grafana td { border: 1px solid rgba(59,130,246,0.08); padding: 8px 12px; }
+.prose-grafana blockquote { border-left: 2px solid #3B82F6; padding-left: 12px; color: #64748B; font-style: italic; }
+.prose-grafana hr { border: none; border-top: 1px solid rgba(59,130,246,0.1); margin: 16px 0; }

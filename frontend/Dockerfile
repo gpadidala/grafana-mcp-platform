@@ -7,7 +7,7 @@ ARG VITE_GRAFANA_URL=http://localhost:3000
 WORKDIR /app
 
 COPY package*.json ./
-RUN npm ci --legacy-peer-deps
+RUN npm install --legacy-peer-deps
 
 COPY . .
 ENV VITE_API_BASE_URL=${VITE_API_BASE_URL}

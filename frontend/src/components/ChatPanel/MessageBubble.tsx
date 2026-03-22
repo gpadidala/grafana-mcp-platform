@@ -22,17 +22,27 @@ export function MessageBubble({ message }: MessageBubbleProps) {
   }
 
   return (
-    <div className={clsx('flex gap-3 group', isUser ? 'flex-row-reverse' : 'flex-row')}>
+    <div className={clsx(
+      'flex gap-3 group animate-slide-in-up',
+      isUser ? 'flex-row-reverse' : 'flex-row'
+    )}>
       {/* Avatar */}
-      <div className={clsx(
-        'w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 mt-1',
-        isUser ? 'bg-blue-600' : 'bg-orange-600'
-      )}>
-        {isUser ? 'U' : 'G'}
+      <div className="flex-shrink-0 mt-1">
+        {isUser ? (
+          <div className="w-8 h-8 rounded-xl flex items-center justify-center text-xs font-bold
+                          bg-gradient-to-br from-blue-600 to-indigo-700 text-white shadow-glow-blue">
+            U
+          </div>
+        ) : (
+          <div className="w-8 h-8 rounded-xl flex items-center justify-center text-sm
+                          bg-gradient-to-br from-orange-500 to-amber-600 shadow-glow-orange">
+            🤖
+          </div>
+        )}
       </div>
 
       {/* Content */}
-      <div className={clsx('max-w-[80%] space-y-1', isUser ? 'items-end flex flex-col' : '')}>
+      <div className={clsx('max-w-[82%] space-y-1.5', isUser ? 'items-end flex flex-col' : '')}>
         {/* Tool calls (before text) */}
         {!isUser && message.toolCalls && message.toolCalls.length > 0 && (
           <div className="w-full space-y-1">
@@ -45,11 +55,21 @@ export function MessageBubble({ message }: MessageBubbleProps) {
         {/* Message text */}
         {(message.content || message.isStreaming) && (
           <div className={clsx(
-            'relative px-4 py-3 rounded-2xl text-sm leading-relaxed',
+            'relative text-sm leading-relaxed',
             isUser
-              ? 'bg-blue-600 text-white rounded-tr-sm'
-              : 'bg-gray-800 text-gray-100 rounded-tl-sm'
-          )}>
+              ? 'px-4 py-3 rounded-2xl rounded-tr-sm text-white'
+              : 'px-4 py-3 rounded-2xl rounded-tl-sm'
+          )}
+          style={isUser ? {
+            background: 'linear-gradient(135deg, #2563eb, #4f46e5)',
+            boxShadow: '0 2px 12px rgba(79, 70, 229, 0.25)',
+          } : {
+            background: 'rgba(17, 24, 39, 0.8)',
+            backdropFilter: 'blur(8px)',
+            border: '1px solid rgba(55, 65, 81, 0.5)',
+            borderLeft: '2px solid rgba(251, 146, 60, 0.5)',
+          }}>
+
             {isUser ? (
               <p className="whitespace-pre-wrap">{message.content}</p>
             ) : (
@@ -58,16 +78,16 @@ export function MessageBubble({ message }: MessageBubbleProps) {
                   remarkPlugins={[remarkGfm]}
                   rehypePlugins={[rehypeHighlight]}
                   components={{
-                    code({ node, className, children, ...props }) {
-                      const match = /language-(\w+)/.exec(className || '')
+                    code({ className, children, ...props }) {
                       const isInline = !className
                       return isInline ? (
-                        <code className="bg-gray-700 px-1 py-0.5 rounded text-orange-300 text-xs" {...props}>
+                        <code className="bg-orange-500/10 border border-orange-500/20 px-1.5 py-0.5
+                                         rounded text-orange-300 text-xs font-mono" {...props}>
                           {children}
                         </code>
                       ) : (
                         <div className="relative group/code">
-                          <code className={className} {...props}>{children}</code>
+                          <code className={clsx(className, 'text-xs')} {...props}>{children}</code>
                         </div>
                       )
                     },
@@ -75,8 +95,14 @@ export function MessageBubble({ message }: MessageBubbleProps) {
                 >
                   {message.content}
                 </ReactMarkdown>
+
+                {/* Streaming indicator */}
                 {message.isStreaming && (
-                  <span className="inline-block w-1.5 h-4 bg-gray-400 animate-pulse ml-0.5 align-middle" />
+                  <span className="inline-flex gap-0.5 ml-1 align-middle">
+                    <span className="typing-dot bg-orange-400 opacity-70" />
+                    <span className="typing-dot bg-orange-400 opacity-70" />
+                    <span className="typing-dot bg-orange-400 opacity-70" />
+                  </span>
                 )}
               </div>
             )}
@@ -85,17 +111,23 @@ export function MessageBubble({ message }: MessageBubbleProps) {
             {!isUser && message.content && !message.isStreaming && (
               <button
                 onClick={copyToClipboard}
-                className="absolute top-2 right-2 p-1 rounded opacity-0 group-hover:opacity-100
-                           text-gray-500 hover:text-gray-300 transition-opacity"
+                className="absolute top-2 right-2 p-1.5 rounded-lg
+                           opacity-0 group-hover:opacity-100
+                           text-gray-600 hover:text-gray-300
+                           hover:bg-gray-700/60
+                           transition-all duration-150"
+                title="Copy message"
               >
-                {copied ? <Check className="w-3.5 h-3.5 text-green-400" /> : <Copy className="w-3.5 h-3.5" />}
+                {copied
+                  ? <Check className="w-3.5 h-3.5 text-green-400" />
+                  : <Copy className="w-3.5 h-3.5" />}
               </button>
             )}
           </div>
         )}
 
         {/* Timestamp */}
-        <span className="text-xs text-gray-600 px-1">
+        <span className="text-[11px] text-gray-700 px-1">
           {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
         </span>
       </div>

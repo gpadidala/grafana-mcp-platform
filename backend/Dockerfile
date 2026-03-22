@@ -25,9 +25,9 @@ LABEL org.opencontainers.image.title="grafana-mcp-backend" \
 
 WORKDIR /app
 
-# Create non-root user
-RUN groupadd --gid 65534 appgroup && \
-    useradd --uid 65534 --gid 65534 --no-create-home --shell /bin/false appuser
+# Create non-root user (use a different GID to avoid conflict with nogroup=65534)
+RUN groupadd --gid 10001 appgroup && \
+    useradd --uid 10001 --gid 10001 --no-create-home --shell /bin/false appuser
 
 # Copy venv from builder
 COPY --from=builder /venv /venv
@@ -36,9 +36,9 @@ COPY --from=builder /venv /venv
 COPY app/ ./app/
 
 # Ensure non-root ownership
-RUN chown -R 65534:65534 /app
+RUN chown -R 10001:10001 /app
 
-USER 65534:65534
+USER 10001:10001
 
 ENV PATH="/venv/bin:$PATH" \
     PYTHONDONTWRITEBYTECODE=1 \

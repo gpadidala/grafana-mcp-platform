@@ -1,10 +1,14 @@
 import { useEffect } from 'react'
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { AppShell } from '@/components/Layout/AppShell'
-import { ChatPanel } from '@/components/ChatPanel/ChatPanel'
-import { useChatStore } from '@/store/chatStore'
+import { ChatPage } from '@/pages/ChatPage'
+import { InvestigatePage } from '@/pages/InvestigatePage'
+import { DashboardsPage } from '@/pages/DashboardsPage'
+import { QueryBuilderPage } from '@/pages/QueryBuilderPage'
+import { SkillsPage } from '@/pages/SkillsPage'
+import { SettingsPage } from '@/pages/SettingsPage'
 import { useAuthStore } from '@/store/authStore'
-import { useLLMStore } from '@/store/llmStore'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -15,40 +19,28 @@ const queryClient = new QueryClient({
   },
 })
 
-function ChatApp() {
-  const { sessions, activeSessionId, createSession, setActiveSession } = useChatStore()
-  const { config } = useLLMStore()
+function AppRoutes() {
   const { setApiKey, isAuthenticated } = useAuthStore()
 
-  // Auto-auth with env API key for local dev
   useEffect(() => {
     const apiKey = import.meta.env.VITE_API_KEY
     if (apiKey && !isAuthenticated) {
-      setApiKey(apiKey)
+      setApiKey(apiKey as string)
     }
   }, [isAuthenticated, setApiKey])
 
-  // Auto-create first session
-  useEffect(() => {
-    if (sessions.length === 0) {
-      createSession(config.provider, config.model)
-    } else if (!activeSessionId) {
-      setActiveSession(sessions[0].id)
-    }
-  }, [sessions.length, activeSessionId, config.provider, config.model,
-      createSession, setActiveSession, sessions])
-
-  const effectiveSessionId = activeSessionId ?? sessions[0]?.id
-
   return (
     <AppShell>
-      {effectiveSessionId ? (
-        <ChatPanel sessionId={effectiveSessionId} />
-      ) : (
-        <div className="flex items-center justify-center h-full text-gray-500">
-          Loading...
-        </div>
-      )}
+      <Routes>
+        <Route path="/" element={<Navigate to="/chat" replace />} />
+        <Route path="/chat" element={<ChatPage />} />
+        <Route path="/investigate" element={<InvestigatePage />} />
+        <Route path="/dashboards" element={<DashboardsPage />} />
+        <Route path="/query" element={<QueryBuilderPage />} />
+        <Route path="/skills" element={<SkillsPage />} />
+        <Route path="/settings" element={<SettingsPage />} />
+        <Route path="*" element={<Navigate to="/chat" replace />} />
+      </Routes>
     </AppShell>
   )
 }
@@ -56,9 +48,11 @@ function ChatApp() {
 export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <div className="dark">
-        <ChatApp />
-      </div>
+      <BrowserRouter>
+        <div className="dark">
+          <AppRoutes />
+        </div>
+      </BrowserRouter>
     </QueryClientProvider>
   )
 }
