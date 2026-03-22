@@ -597,3 +597,14 @@ make test           # all three
 - [aws-samples/sample-grafana-remote-mcp](https://github.com/aws-samples/sample-grafana-remote-mcp) — OAuth2.1 remote MCP pattern
 - [FastAPI docs](https://fastapi.tiangolo.com/) — Python async web framework
 - [LangChain MCP adapters](https://github.com/langchain-ai/langchain-mcp-adapters) — MCP tool integration for LangChain
+
+---
+
+## Author
+
+**Gopal Rao Padidala**
+Email: [gopalpadidala@gmail.com](mailto:gopalpadidala@gmail.com)
+GitHub: [github.com/gpadidala](https://github.com/gpadidala)
+
+Built with passion for making Observability intelligent.
+If you find this useful, star the repo ⭐ and reach out!
